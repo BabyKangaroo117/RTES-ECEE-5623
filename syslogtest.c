@@ -1,6 +1,7 @@
 #include <syslog.h>
 #include <sys/time.h>
-
+#include <sys/types.h>
+#include <unistd.h>
 // Note that all syslog output goes to /var/log/syslog
 //
 // To view the output as your RT applicaiton is running, you can just tail the log as follows:
@@ -26,4 +27,8 @@ void main(void)
     syslog(LOG_CRIT, "My log message test @ tv.tv_sec %ld, tv.tv_usec %ld\n", tv.tv_sec, tv.tv_usec);
     gettimeofday(&tv, (struct timezone *)0);
     syslog(LOG_CRIT, "My log message test @ tv.tv_sec %ld, tv.tv_usec %ld\n", tv.tv_sec, tv.tv_usec);
+
+    gettimeofday(&tv, (struct timezone *)0);
+    syslog(LOG_CRIT, "TAG: PID %d @ %lf sec\n", getpid(), (double)tv.tv_sec + (double)tv.tv_usec / 1000000.0);
 }
+
