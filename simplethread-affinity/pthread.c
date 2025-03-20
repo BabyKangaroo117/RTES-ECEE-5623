@@ -6,7 +6,8 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sched.h>
-
+#include <pthread.h>
+#include <unistd.h>
 #define NUM_THREADS 64
 #define NUM_CPUS 4 
 
