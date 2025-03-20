@@ -12,32 +12,23 @@ typedef struct
 
 
 // POSIX thread declarations and scheduling attributes
-//
 pthread_t threads[NUM_THREADS];
 threadParams_t threadParams[NUM_THREADS];
 
-
-void *counterThread(void *threadp)
+/* 
+ * Thread that prints hello world to the syslog
+ */
+void *helloWorldThread(void *threadp)
 {
-    int sum=0, i;
     threadParams_t *threadParams = (threadParams_t *)threadp;
-
-    for(i=1; i < (threadParams->threadIdx)+1; i++)
-        sum=sum+i;
- 
-    printf("Thread idx=%d, sum[0...%d]=%d\n", 
-           threadParams->threadIdx,
-           threadParams->threadIdx, sum);
-
     syslog(LOG_CRIT, "[Course:1][ASSIGNMENT:1] Hello World from Thread!");
 }
 
-
+/*
+ * Entry point of the program
+ */
 int main (int argc, char *argv[])
 {
-   int rc;
-   int i;
-
    // Run "uname -a" and open a pipe for reading
    FILE *fp = popen("uname -a", "r");
    if (fp == NULL)
@@ -52,25 +43,29 @@ int main (int argc, char *argv[])
    {
       syslog(LOG_CRIT, "[Course:1][ASSIGNMENT:1] %s", buffer);
    }
+   else
+   {
+      syslog(LOG_ERR, "[Course:1][ASSIGNMENT:1] Failed to run read uname information from pipe");
+   }
    
    // Close the pipe
    pclose(fp);
    
    syslog(LOG_CRIT, "[Course:1][ASSIGNMENT:1] Hello World from Main!");
 
-   for(i=0; i < NUM_THREADS; i++)
+   for(int i=0; i < NUM_THREADS; i++)
    {
        threadParams[i].threadIdx=i;
 
        pthread_create(&threads[i],   // pointer to thread descriptor
                       (void *)0,     // use default attributes
-                      counterThread, // thread function entry point
+                      helloWorldThread, // thread function entry point
                       (void *)&(threadParams[i]) // parameters to pass in
                      );
 
    }
-
-   for(i=0;i<NUM_THREADS;i++)
+   // Join threads so that parent process waits for all threads to finish before exiting.
+   for(int i=0;i<NUM_THREADS;i++)
        pthread_join(threads[i], NULL);
 
    printf("TEST COMPLETE\n");
