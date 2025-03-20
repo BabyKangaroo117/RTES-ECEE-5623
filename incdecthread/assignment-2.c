@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <sched.h>
 #include <syslog.h>
-
+#include <pthread.h>
 #include <stdatomic.h>
 
 #define COUNT  1000
