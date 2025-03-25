@@ -6,9 +6,9 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sched.h>
-#include <pthread.h>
 #include <unistd.h>
-#define NUM_THREADS 64
+#include <syslog.h>
+#define NUM_THREADS 128
 #define NUM_CPUS 4 
 
 typedef struct
@@ -18,7 +18,6 @@ typedef struct
 
 
 // POSIX thread declarations and scheduling attributes
-//
 pthread_t threads[NUM_THREADS];
 pthread_t mainthread;
 pthread_t startthread;
@@ -59,28 +58,36 @@ void set_scheduler(void)
     cpu_set_t cpuset;
 
     printf("INITIAL "); print_scheduler();
-
+    // Initialize schedule attributes
     pthread_attr_init(&fifo_sched_attr);
+    // Schedule attributes are set to be inherited
     pthread_attr_setinheritsched(&fifo_sched_attr, PTHREAD_EXPLICIT_SCHED);
+    // Policy is set to SCHED FIFO
     pthread_attr_setschedpolicy(&fifo_sched_attr, SCHED_POLICY);
     CPU_ZERO(&cpuset);
     cpuidx=(3);
+    // Mask CPU set to execute tasks on core 3
     CPU_SET(cpuidx, &cpuset);
+    // Set scheduler attributes to CPU core 3
     pthread_attr_setaffinity_np(&fifo_sched_attr, sizeof(cpu_set_t), &cpuset);
-
+    // Max priority of the system
     max_prio=sched_get_priority_max(SCHED_POLICY);
     fifo_param.sched_priority=max_prio;    
 
+    // Set the current thread to SCHED FIFO
     if((rc=sched_setscheduler(getpid(), SCHED_POLICY, &fifo_param)) < 0)
         perror("sched_setscheduler");
 
+    // Set the current thread params to the parameters from above
     pthread_attr_setschedparam(&fifo_sched_attr, &fifo_param);
 
     printf("ADJUSTED "); print_scheduler();
 }
 
 
-
+/*
+ * Sum the thread IDs from 1 to the current thread
+ */
 
 void *counterThread(void *threadp)
 {
@@ -89,11 +96,13 @@ void *counterThread(void *threadp)
     pthread_t mythread;
     double start=0.0, stop=0.0;
     struct timeval startTime, stopTime;
-
+    
+    // Start the timer
     gettimeofday(&startTime, 0);
     start = ((startTime.tv_sec * 1000000.0) + startTime.tv_usec)/1000000.0;
 
 
+    // Iterate from 0 to ID and take the sum of the value
     for(iterations=0; iterations < MAX_ITERATIONS; iterations++)
     {
         sum=0;
@@ -101,17 +110,26 @@ void *counterThread(void *threadp)
             sum=sum+i;
     }
 
-
+    // Stop the timer
     gettimeofday(&stopTime, 0);
     stop = ((stopTime.tv_sec * 1000000.0) + stopTime.tv_usec)/1000000.0;
 
-    printf("\nThread idx=%d, sum[0...%d]=%d, running on CPU=%d, start=%lf, stop=%lf", 
+//    syslog(LOG_CRIT, "\n[COURSE:1][ASSIGNMENT:4]: Thread idx=%d, sum[0...%d]=%d, running on CPU=%d", 
+//           threadParams->threadIdx,
+//           threadParams->threadIdx, sum, sched_getcpu());
+           
+
+    syslog(LOG_CRIT, "\n[COURSE:1][ASSIGNMENT:4]: Thread idx=%d, sum[0...%d]=%d, running on CPU=%d, time=%lf micro seconds", 
            threadParams->threadIdx,
            threadParams->threadIdx, sum, sched_getcpu(),
-           start, stop);
+           stop-start);
+
 }
 
 
+/*
+ * Entry thread from main that creates all other threads
+ */
 void *starterThread(void *threadp)
 {
    int i, rc;
@@ -164,6 +182,24 @@ int main (int argc, char *argv[])
        printf("\n");
    }
 
+   // Run "uname -a" and open a pipe for reading
+   FILE *fp = popen("uname -a", "r");
+   if (fp == NULL)
+   {
+      syslog(LOG_ERR, "[COURSE:1][ASSIGNMENT:4]: Failed to run uname command");
+      return 1;
+   }
+
+   char buffer[256];
+   // Read command output from internal buffer into input buffer
+   if(fgets(buffer, sizeof(buffer), fp) != NULL)
+   {
+      syslog(LOG_CRIT, "[COURSE:1][ASSIGNMENT:4]: %s", buffer);
+   }
+   
+   // Close the pipe
+   pclose(fp);
+   
    pthread_create(&startthread,   // pointer to thread descriptor
                   &fifo_sched_attr,     // use FIFO RT max priority attributes
                   starterThread, // thread function entry point

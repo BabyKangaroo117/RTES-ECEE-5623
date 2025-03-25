@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <errno.h>
+#include <syslog.h>
 
 #define NSEC_PER_SEC (1000000000)
 #define NSEC_PER_MSEC (1000000)
@@ -22,12 +23,14 @@
 
 void end_delay_test(void);
 
+// Holds time in sec and nanosec
 static struct timespec sleep_time = {0, 0};
 static struct timespec sleep_requested = {0, 0};
 static struct timespec remaining_time = {0, 0};
 
 static unsigned int sleep_count = 0;
 
+// POSIX thread declerations and scheduling attributes
 pthread_t main_thread;
 pthread_attr_t main_sched_attr;
 int rt_max_prio, rt_min_prio, min;
@@ -56,7 +59,9 @@ void print_scheduler(void)
    }
 }
 
-
+/*
+ * Add the seconds and nanoseconds together as a floating point value then takes the difference
+ */
 double d_ftime(struct timespec *fstart, struct timespec *fstop)
 {
   double dfstart = ((double)(fstart->tv_sec) + ((double)(fstart->tv_nsec) / 1000000000.0));
@@ -65,7 +70,9 @@ double d_ftime(struct timespec *fstart, struct timespec *fstop)
   return(dfstop - dfstart); 
 }
 
-
+/*
+ * Takes the difference between a start and stop time then saves it in delta_t
+ */
 int delta_t(struct timespec *stop, struct timespec *start, struct timespec *delta_t)
 {
   int dt_sec=stop->tv_sec - start->tv_sec;
@@ -142,6 +149,9 @@ static struct timespec delay_error = {0, 0};
 
 #define TEST_ITERATIONS (100)
 
+/*
+ * 
+ */
 void *delay_test(void *threadID)
 {
   int idx, rc;
@@ -150,7 +160,8 @@ void *delay_test(void *threadID)
   struct timespec rtclk_resolution;
 
   sleep_count = 0;
-
+   
+  // Finds the resolution of the specified clock id and stores it in the timespec data type 
   if(clock_getres(MY_CLOCK, &rtclk_resolution) == ERROR)
   {
       perror("clock_getres");
@@ -158,7 +169,7 @@ void *delay_test(void *threadID)
   }
   else
   {
-      printf("\n\nPOSIX Clock demo using system RT clock with resolution:\n\t%ld secs, %ld microsecs, %ld nanosecs\n", rtclk_resolution.tv_sec, (rtclk_resolution.tv_nsec/1000), rtclk_resolution.tv_nsec);
+      syslog(LOG_CRIT, "\n\nPOSIX Clock demo using system RT clock with resolution:\n\t%ld secs, %ld microsecs, %ld nanosecs\n", rtclk_resolution.tv_sec, (rtclk_resolution.tv_nsec/1000), rtclk_resolution.tv_nsec);
   }
 
   for(idx=0; idx < TEST_ITERATIONS; idx++)
@@ -176,7 +187,7 @@ void *delay_test(void *threadID)
 
       /* request sleep time and repeat if time remains */
       do 
-      {
+      {   // If the thread gets interrupted, pick up at the remaining time
           if(rc=nanosleep(&sleep_time, &remaining_time) == 0) break;
          
           sleep_time.tv_sec = remaining_time.tv_sec;
@@ -185,17 +196,23 @@ void *delay_test(void *threadID)
       } 
       while (((remaining_time.tv_sec > 0) || (remaining_time.tv_nsec > 0))
 		      && (sleep_count < max_sleep_calls));
-
+      // End time stamp
       clock_gettime(MY_CLOCK, &rtclk_stop_time);
-
+      
+      // Get the difference between the start and stop time
       delta_t(&rtclk_stop_time, &rtclk_start_time, &rtclk_dt);
+      // Get the difference between the requested sleep time and the actual sleep time
       delta_t(&rtclk_dt, &sleep_requested, &delay_error);
-
+      
+      // print the test results
       end_delay_test();
   }
 
 }
 
+/*
+ * Results of the clock delay
+ */
 void end_delay_test(void)
 {
     double real_dt;
@@ -207,8 +224,12 @@ void end_delay_test(void)
          rtclk_stop_time.tv_sec, rtclk_stop_time.tv_nsec);
 #endif
 
+  // Takes the difference between the times and outputs a floating point value 
   real_dt=d_ftime(&rtclk_start_time, &rtclk_stop_time);
   printf("MY_CLOCK clock DT seconds = %ld, msec=%ld, usec=%ld, nsec=%ld, sec=%6.9lf\n", 
+         rtclk_dt.tv_sec, rtclk_dt.tv_nsec/1000000, rtclk_dt.tv_nsec/1000, rtclk_dt.tv_nsec, real_dt);
+
+  syslog(LOG_CRIT, "MY_CLOCK clock DT seconds = %ld, msec=%ld, usec=%ld, nsec=%ld, sec=%6.9lf\n", 
          rtclk_dt.tv_sec, rtclk_dt.tv_nsec/1000000, rtclk_dt.tv_nsec/1000, rtclk_dt.tv_nsec, real_dt);
 
 #if 0
@@ -220,6 +241,28 @@ void end_delay_test(void)
 #endif
   printf("MY_CLOCK delay error = %ld, nanoseconds = %ld\n", 
          delay_error.tv_sec, delay_error.tv_nsec);
+
+  syslog(LOG_CRIT, "MY_CLOCK delay error = %ld, nanoseconds = %ld\n", 
+         delay_error.tv_sec, delay_error.tv_nsec);
+
+}
+
+/*
+ * Set the scheduler to be FIFO with max priority
+ */
+int SetSchedulerRealTime(void)
+{
+   pthread_attr_init(&main_sched_attr);
+   pthread_attr_setinheritsched(&main_sched_attr, PTHREAD_EXPLICIT_SCHED);
+   pthread_attr_setschedpolicy(&main_sched_attr, SCHED_FIFO);
+
+   rt_max_prio = sched_get_priority_max(SCHED_FIFO);
+   rt_min_prio = sched_get_priority_min(SCHED_FIFO);
+
+   main_param.sched_priority = rt_max_prio;
+   
+   pthread_attr_setschedparam(&main_sched_attr, &main_param);
+   return  sched_setscheduler(getpid(), SCHED_FIFO, &main_param);
 }
 
 #define RUN_RT_THREAD
@@ -232,16 +275,7 @@ void main(void)
    print_scheduler();
 
 #ifdef RUN_RT_THREAD
-   pthread_attr_init(&main_sched_attr);
-   pthread_attr_setinheritsched(&main_sched_attr, PTHREAD_EXPLICIT_SCHED);
-   pthread_attr_setschedpolicy(&main_sched_attr, SCHED_FIFO);
-
-   rt_max_prio = sched_get_priority_max(SCHED_FIFO);
-   rt_min_prio = sched_get_priority_min(SCHED_FIFO);
-
-   main_param.sched_priority = rt_max_prio;
-   rc=sched_setscheduler(getpid(), SCHED_FIFO, &main_param);
-
+   rc = SetSchedulerRealTime();
 
    if (rc)
    {
@@ -252,9 +286,7 @@ void main(void)
    printf("After adjustments to scheduling policy:\n");
    print_scheduler();
 
-   main_param.sched_priority = rt_max_prio;
-   pthread_attr_setschedparam(&main_sched_attr, &main_param);
-
+   
    rc = pthread_create(&main_thread, &main_sched_attr, delay_test, (void *)0);
 
    if (rc)
@@ -264,6 +296,7 @@ void main(void)
        exit(-1);
    }
 
+   // Keep main thread from exiting and closing the program
    pthread_join(main_thread, NULL);
 
    if(pthread_attr_destroy(&main_sched_attr) != 0)
