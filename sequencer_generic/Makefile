@@ -16,7 +16,7 @@ all:	seqgenex0 seqgen seqgen2 seqgen3 seqv4l2 clock_times capture assignment-5 a
 
 clean:
 	-rm -f *.o *.d frames/*.pgm frames/*.ppm
-	-rm -f seqgenex0 seqgen seqgen2 seqgen3 seqv4l2 clock_times capture assignment-5
+	-rm -f seqgenex0 seqgen seqgen2 seqgen3 seqv4l2 clock_times capture assignment-5 assignment-1-course-2
 
 seqgenex0: seqgenex0.o
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $@.o -lpthread -lrt

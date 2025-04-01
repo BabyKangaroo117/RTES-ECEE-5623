@@ -60,12 +60,8 @@
 //
 // Sequencer = RT_MAX	@ 100 Hz
 // Servcie_1 = RT_MAX-1	@ 50  Hz
-// Service_2 = RT_MAX-2	@ 20  Hz
-// Service_3 = RT_MAX-3	@ 10  Hz
-// Service_4 = RT_MAX-4	@ 5   Hz
-// Service_5 = RT_MAX-5	@ 2   Hz
-// Service_6 = RT_MAX-6	@ 1   Hz
-// Service_7 = RT_MIN	@ 1   Hz
+// Service_2 = RT_MAX-2	@ 10  Hz
+// Service_3 = RT_MAX-3	@ 6.667  Hz
 //
 /////////////////////////////////////////////////////////////////////////////
 // JETSON SYSTEM NOTES:
@@ -119,6 +115,7 @@
 #include <errno.h>
 
 #include <signal.h>
+#include <stdatomic.h>
 
 #define USEC_PER_MSEC (1000)
 #define NANOSEC_PER_MSEC (1000000)
@@ -141,8 +138,8 @@
 //#define MY_CLOCK_TYPE CLOCK_MONTONIC_COARSE
 
 int abortTest=FALSE;
-int abortS1=FALSE, abortS2=FALSE, abortS3=FALSE, abortS4=FALSE, abortS5=FALSE, abortS6=FALSE, abortS7=FALSE;
-sem_t semS1, semS2, semS3, semS4, semS5, semS6, semS7;
+int abortS1=FALSE, abortS2=FALSE, abortS3=FALSE;
+sem_t semS1, semS2, semS3;
 struct timespec start_time_val;
 double start_realtime;
 unsigned long long sequencePeriods;
@@ -208,7 +205,9 @@ static inline unsigned ccnt_read (void)
 }
 
 
-
+/*
+ * Entry point of program
+ */
 void main(void)
 {
     struct timespec current_time_val, current_time_res;
@@ -257,7 +256,8 @@ void main(void)
     if (sem_init (&semS3, 0, 0)) { printf ("Failed to initialize S3 semaphore\n"); exit (-1); }
 
     mainpid=getpid();
-
+    
+    // Set current thread attributes and params
     rt_max_prio = sched_get_priority_max(SCHED_FIFO);
     rt_min_prio = sched_get_priority_min(SCHED_FIFO);
 
@@ -280,7 +280,8 @@ void main(void)
     printf("rt_max_prio=%d\n", rt_max_prio);
     printf("rt_min_prio=%d\n", rt_min_prio);
 
-
+    // Set thread attributes and params
+    // Should be in order of highest to lowest frequency task
     for(i=0; i < NUM_THREADS; i++)
     {
 
@@ -292,7 +293,8 @@ void main(void)
       rc=pthread_attr_setinheritsched(&rt_sched_attr[i], PTHREAD_EXPLICIT_SCHED);
       rc=pthread_attr_setschedpolicy(&rt_sched_attr[i], SCHED_FIFO);
       rc=pthread_attr_setaffinity_np(&rt_sched_attr[i], sizeof(cpu_set_t), &threadcpu);
-
+      
+      // Decrease priority by one for each new thread
       rt_param[i].sched_priority=rt_max_prio-i;
       pthread_attr_setschedparam(&rt_sched_attr[i], &rt_param[i]);
 
@@ -351,7 +353,7 @@ void main(void)
  
     // Create Sequencer thread, which like a cyclic executive, is highest prio
     printf("Start sequencer\n");
-    sequencePeriods=2000;
+    sequencePeriods=100;
 
     // Sequencer = RT_MAX	@ 100 Hz
     //
@@ -386,7 +388,9 @@ void main(void)
 }
 
 
-
+/*
+ * Sequencer that releases services at different intervals
+ */
 void Sequencer(int id)
 {
     struct timespec current_time_val;
@@ -435,7 +439,9 @@ void Sequencer(int id)
 
 }
 
-
+/*
+ * Runs the fibonacci sequence at one unit of computation 
+ */
 void *Service_1(void *threadp)
 {
     struct timespec current_time_val;
@@ -452,7 +458,7 @@ void *Service_1(void *threadp)
     {
 	// wait for service request from the sequencer, a signal handler or ISR in kernel
         sem_wait(&semS1);
-	fibonacci(1000);
+	fibonacci(400000);
 	S1Cnt++;
 	// DO WORK
 
@@ -467,6 +473,9 @@ void *Service_1(void *threadp)
 }
 
 
+/*
+ * Runs the fibonacci sequence at one unit of computation
+ */
 void *Service_2(void *threadp)
 {
     struct timespec current_time_val;
@@ -481,7 +490,7 @@ void *Service_2(void *threadp)
     while(!abortS2)
     {
         sem_wait(&semS2);
-        fibonacci(1000);
+        fibonacci(400000);
         S2Cnt++;
         clock_gettime(MY_CLOCK_TYPE, &current_time_val); current_realtime=realtime(&current_time_val);
         syslog(LOG_CRIT, "S2 10 Hz on core %d for release %llu @ sec=%6.9lf\n", sched_getcpu(), S2Cnt, current_realtime-start_realtime);
@@ -491,6 +500,9 @@ void *Service_2(void *threadp)
 }
 
 
+/*
+ * Runs the fibonacci sequence at two units of computation
+ */
 void *Service_3(void *threadp)
 {
     struct timespec current_time_val;
@@ -505,7 +517,7 @@ void *Service_3(void *threadp)
     while(!abortS3)
     {
         sem_wait(&semS3);
-	fibonacci(80000000);
+	fibonacci(800000);
 	S3Cnt++;
         clock_gettime(MY_CLOCK_TYPE, &current_time_val); current_realtime=realtime(&current_time_val);
         syslog(LOG_CRIT, "S3 6.667 Hz on core %d release %llu @ sec=%6.9lf\n", sched_getcpu(), S3Cnt, current_realtime-start_realtime);
@@ -513,6 +525,7 @@ void *Service_3(void *threadp)
 
     pthread_exit((void *)0);
 }
+
 
 double getTimeMsec(void)
 {
@@ -556,7 +569,7 @@ void print_scheduler(void)
 
 void fibonacci(int n) {
     int a = 0, b = 1, next;
-    static int count = 0; 
+    static _Atomic int count = 0; 
     double startRealTime, endRealTime;
 	
     startRealTime = getTimeMsec();
@@ -567,5 +580,5 @@ void fibonacci(int n) {
     }
 
     endRealTime = getTimeMsec();
-    printf("Fibonacci time = %ld Count = %d \n", startRealTime - endRealTime, count++);
+    printf("Fibonacci time = %f Count = %d \n", endRealTime - startRealTime, ++count);
 }
