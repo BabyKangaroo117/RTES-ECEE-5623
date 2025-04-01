@@ -429,12 +429,8 @@ void Sequencer(int id)
 
 	// shutdown all services
         sem_post(&semS1); sem_post(&semS2); sem_post(&semS3);
-        sem_post(&semS4); sem_post(&semS5); sem_post(&semS6);
-        sem_post(&semS7);
 
         abortS1=TRUE; abortS2=TRUE; abortS3=TRUE;
-        abortS4=TRUE; abortS5=TRUE; abortS6=TRUE;
-        abortS7=TRUE;
     }
 
 }
