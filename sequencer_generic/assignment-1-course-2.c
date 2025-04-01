@@ -127,7 +127,7 @@
 #define TRUE (1)
 #define FALSE (0)
 
-#define NUM_THREADS (7)
+#define NUM_THREADS (3)
 
 // Of the available user space clocks, CLOCK_MONONTONIC_RAW is typically most precise and not subject to 
 // updates from external timer adjustments
@@ -164,11 +164,8 @@ void Sequencer(int id);
 void *Service_1(void *threadp);
 void *Service_2(void *threadp);
 void *Service_3(void *threadp);
-void *Service_4(void *threadp);
-void *Service_5(void *threadp);
-void *Service_6(void *threadp);
-void *Service_7(void *threadp);
 
+void fibonacci(int i);
 
 double getTimeMsec(void);
 double realtime(struct timespec *tsptr);
@@ -258,10 +255,6 @@ void main(void)
     if (sem_init (&semS1, 0, 0)) { printf ("Failed to initialize S1 semaphore\n"); exit (-1); }
     if (sem_init (&semS2, 0, 0)) { printf ("Failed to initialize S2 semaphore\n"); exit (-1); }
     if (sem_init (&semS3, 0, 0)) { printf ("Failed to initialize S3 semaphore\n"); exit (-1); }
-    if (sem_init (&semS4, 0, 0)) { printf ("Failed to initialize S4 semaphore\n"); exit (-1); }
-    if (sem_init (&semS5, 0, 0)) { printf ("Failed to initialize S5 semaphore\n"); exit (-1); }
-    if (sem_init (&semS6, 0, 0)) { printf ("Failed to initialize S6 semaphore\n"); exit (-1); }
-    if (sem_init (&semS7, 0, 0)) { printf ("Failed to initialize S7 semaphore\n"); exit (-1); }
 
     mainpid=getpid();
 
@@ -291,21 +284,9 @@ void main(void)
     for(i=0; i < NUM_THREADS; i++)
     {
 
-      // run even indexed threads on core 2
-      if(i % 2 == 0)
-      {
-          CPU_ZERO(&threadcpu);
-          cpuidx=(2);
-          CPU_SET(cpuidx, &threadcpu);
-      }
-
-      // run odd indexed threads on core 3
-      else
-      {
-          CPU_ZERO(&threadcpu);
-          cpuidx=(3);
-          CPU_SET(cpuidx, &threadcpu);
-      }
+      CPU_ZERO(&threadcpu);
+      cpuidx=(2);
+      CPU_SET(cpuidx, &threadcpu);
 
       rc=pthread_attr_init(&rt_sched_attr[i]);
       rc=pthread_attr_setinheritsched(&rt_sched_attr[i], PTHREAD_EXPLICIT_SCHED);
@@ -339,7 +320,7 @@ void main(void)
         printf("pthread_create successful for service 1\n");
 
 
-    // Service_2 = RT_MAX-2	@ 20 Hz
+    // Service_2 = RT_MAX-2	@ 10 Hz
     //
     rt_param[1].sched_priority=rt_max_prio-2;
     pthread_attr_setschedparam(&rt_sched_attr[1], &rt_param[1]);
@@ -350,7 +331,7 @@ void main(void)
         printf("pthread_create successful for service 2\n");
 
 
-    // Service_3 = RT_MAX-3	@ 10 Hz
+    // Service_3 = RT_MAX-3	@ 6.667 Hz
     //
     rt_param[2].sched_priority=rt_max_prio-3;
     pthread_attr_setschedparam(&rt_sched_attr[2], &rt_param[2]);
@@ -359,51 +340,6 @@ void main(void)
         perror("pthread_create for service 3");
     else
         printf("pthread_create successful for service 3\n");
-
-
-    // Service_4 = RT_MAX-4	@ 5 Hz
-    //
-    rt_param[3].sched_priority=rt_max_prio-4;
-    pthread_attr_setschedparam(&rt_sched_attr[3], &rt_param[3]);
-    rc=pthread_create(&threads[3], &rt_sched_attr[3], Service_4, (void *)&(threadParams[3]));
-    if(rc < 0)
-        perror("pthread_create for service 4");
-    else
-        printf("pthread_create successful for service 4\n");
-
-
-    // Service_5 = RT_MAX-5	@ 2 Hz
-    //
-    rt_param[4].sched_priority=rt_max_prio-5;
-    pthread_attr_setschedparam(&rt_sched_attr[4], &rt_param[4]);
-    rc=pthread_create(&threads[4], &rt_sched_attr[4], Service_5, (void *)&(threadParams[4]));
-    if(rc < 0)
-        perror("pthread_create for service 5");
-    else
-        printf("pthread_create successful for service 5\n");
-
-
-    // Service_6 = RT_MAX-6	@ 1 Hz
-    //
-    rt_param[5].sched_priority=rt_max_prio-6;
-    pthread_attr_setschedparam(&rt_sched_attr[5], &rt_param[5]);
-    rc=pthread_create(&threads[5], &rt_sched_attr[5], Service_6, (void *)&(threadParams[5]));
-    if(rc < 0)
-        perror("pthread_create for service 6");
-    else
-        printf("pthread_create successful for service 6\n");
-
-
-    // Service_7 = RT_MIN	@ 1 Hz
-    //
-    rt_param[6].sched_priority=rt_min_prio;
-    pthread_attr_setschedparam(&rt_sched_attr[6], &rt_param[6]);
-    rc=pthread_create(&threads[6], &rt_sched_attr[6], Service_7, (void *)&(threadParams[6]));
-    if(rc < 0)
-        perror("pthread_create for service 7");
-    else
-        printf("pthread_create successful for service 7\n");
-
 
     // Wait for service threads to initialize and await relese by sequencer.
     //
@@ -469,27 +405,14 @@ void Sequencer(int id)
     // Release each service at a sub-rate of the generic sequencer rate
 
     // Servcie_1 = RT_MAX-1	@ 50 Hz
-    //if((seqCnt % 2) == 0) sem_post(&semS1);
+    if((seqCnt % 2) == 0) sem_post(&semS1);
 
-    // Service_2 = RT_MAX-2	@ 20 Hz
-    //if((seqCnt % 5) == 0) sem_post(&semS2);
+    // Service_2 = RT_MAX-2	@ 10 Hz
+    if((seqCnt % 10) == 0) sem_post(&semS2);
 
-    // Service_3 = RT_MAX-3	@ 10 Hz
-    //if((seqCnt % 10) == 0) sem_post(&semS3);
+    // Service_3 = RT_MAX-3	@ 6.667 Hz
+    if((seqCnt % 15) == 0) sem_post(&semS3);
 
-    // Service_4 = RT_MAX-4	@ 5 Hz
-    if((seqCnt % 20) == 0) sem_post(&semS4);
-
-    // Service_5 = RT_MAX-5	@ 2 Hz
-    //if((seqCnt % 50) == 0) sem_post(&semS5);
-
-    // Service_6 = RT_MAX-6	@ 1 Hz
-    //if((seqCnt % 100) == 0) sem_post(&semS6);
-
-    // Service_7 = RT_MIN	1 Hz
-    if((seqCnt % 100) == 0) sem_post(&semS7);
-
-    
     if(abortTest || (seqCnt >= sequencePeriods))
     {
         // disable interval timer
@@ -513,7 +436,6 @@ void Sequencer(int id)
 }
 
 
-
 void *Service_1(void *threadp)
 {
     struct timespec current_time_val;
@@ -530,9 +452,8 @@ void *Service_1(void *threadp)
     {
 	// wait for service request from the sequencer, a signal handler or ISR in kernel
         sem_wait(&semS1);
-
-        S1Cnt++;
-
+	fibonacci(1000);
+	S1Cnt++;
 	// DO WORK
 
 	// on order of up to milliseconds of latency to get time
@@ -560,10 +481,10 @@ void *Service_2(void *threadp)
     while(!abortS2)
     {
         sem_wait(&semS2);
+        fibonacci(1000);
         S2Cnt++;
-
         clock_gettime(MY_CLOCK_TYPE, &current_time_val); current_realtime=realtime(&current_time_val);
-        syslog(LOG_CRIT, "S2 20 Hz on core %d for release %llu @ sec=%6.9lf\n", sched_getcpu(), S2Cnt, current_realtime-start_realtime);
+        syslog(LOG_CRIT, "S2 10 Hz on core %d for release %llu @ sec=%6.9lf\n", sched_getcpu(), S2Cnt, current_realtime-start_realtime);
     }
 
     pthread_exit((void *)0);
@@ -584,109 +505,14 @@ void *Service_3(void *threadp)
     while(!abortS3)
     {
         sem_wait(&semS3);
-        S3Cnt++;
-
+	fibonacci(80000000);
+	S3Cnt++;
         clock_gettime(MY_CLOCK_TYPE, &current_time_val); current_realtime=realtime(&current_time_val);
-        syslog(LOG_CRIT, "S3 10 Hz on core %d forrelease %llu @ sec=%6.9lf\n", sched_getcpu(), S3Cnt, current_realtime-start_realtime);
+        syslog(LOG_CRIT, "S3 6.667 Hz on core %d release %llu @ sec=%6.9lf\n", sched_getcpu(), S3Cnt, current_realtime-start_realtime);
     }
 
     pthread_exit((void *)0);
 }
-
-
-void *Service_4(void *threadp)
-{
-    struct timespec current_time_val;
-    double current_realtime;
-    unsigned long long S4Cnt=0;
-    threadParams_t *threadParams = (threadParams_t *)threadp;
-
-    clock_gettime(MY_CLOCK_TYPE, &current_time_val); current_realtime=realtime(&current_time_val);
-    syslog(LOG_CRIT, "S4 thread @ sec=%6.9lf\n", current_realtime-start_realtime);
-    printf("S4 thread @ sec=%6.9lf\n", current_realtime-start_realtime);
-
-    while(!abortS4)
-    {
-        sem_wait(&semS4);
-        S4Cnt++;
-
-        clock_gettime(MY_CLOCK_TYPE, &current_time_val); current_realtime=realtime(&current_time_val);
-        syslog(LOG_CRIT, "S4 5 Hz on core %d for release %llu @ sec=%6.9lf\n", sched_getcpu(), S4Cnt, current_realtime-start_realtime);
-    }
-
-    pthread_exit((void *)0);
-}
-
-
-void *Service_5(void *threadp)
-{
-    struct timespec current_time_val;
-    double current_realtime;
-    unsigned long long S5Cnt=0;
-    threadParams_t *threadParams = (threadParams_t *)threadp;
-
-    clock_gettime(MY_CLOCK_TYPE, &current_time_val); current_realtime=realtime(&current_time_val);
-    syslog(LOG_CRIT, "S5 thread @ sec=%6.9lf\n", current_realtime-start_realtime);
-    printf("S5 thread @ sec=%6.9lf\n", current_realtime-start_realtime);
-
-    while(!abortS5)
-    {
-        sem_wait(&semS5);
-        S5Cnt++;
-
-        clock_gettime(MY_CLOCK_TYPE, &current_time_val); current_realtime=realtime(&current_time_val);
-        syslog(LOG_CRIT, "S5 2 Hz on core %d for release %llu @ sec=%6.9lf\n", sched_getcpu(), S5Cnt, current_realtime-start_realtime);
-    }
-
-    pthread_exit((void *)0);
-}
-
-void *Service_6(void *threadp)
-{
-    struct timespec current_time_val;
-    double current_realtime;
-    unsigned long long S6Cnt=0;
-    threadParams_t *threadParams = (threadParams_t *)threadp;
-
-    clock_gettime(MY_CLOCK_TYPE, &current_time_val); current_realtime=realtime(&current_time_val);
-    syslog(LOG_CRIT, "S6 thread @ sec=%6.9lf\n", current_realtime-start_realtime);
-    printf("S6 thread @ sec=%6.9lf\n", current_realtime-start_realtime);
-
-    while(!abortS6)
-    {
-        sem_wait(&semS6);
-        S6Cnt++;
-
-        clock_gettime(MY_CLOCK_TYPE, &current_time_val); current_realtime=realtime(&current_time_val);
-        syslog(LOG_CRIT, "S6 1 Hz on core %d for release %llu @ sec=%6.9lf\n", sched_getcpu(), S6Cnt, current_realtime-start_realtime);
-    }
-
-    pthread_exit((void *)0);
-}
-
-void *Service_7(void *threadp)
-{
-    struct timespec current_time_val;
-    double current_realtime;
-    unsigned long long S7Cnt=0;
-    threadParams_t *threadParams = (threadParams_t *)threadp;
-
-    clock_gettime(MY_CLOCK_TYPE, &current_time_val); current_realtime=realtime(&current_time_val);
-    syslog(LOG_CRIT, "S7 thread @ sec=%6.9lf\n", current_realtime-start_realtime);
-    printf("S7 thread @ sec=%6.9lf\n", current_realtime-start_realtime);
-
-    while(!abortS7)
-    {
-        sem_wait(&semS7);
-        S7Cnt++;
-
-        clock_gettime(MY_CLOCK_TYPE, &current_time_val); current_realtime=realtime(&current_time_val);
-        syslog(LOG_CRIT, "S7 1 Hz on core %d for release %llu @ sec=%6.9lf\n", sched_getcpu(), S7Cnt, current_realtime-start_realtime);
-    }
-
-    pthread_exit((void *)0);
-}
-
 
 double getTimeMsec(void)
 {
@@ -728,3 +554,18 @@ void print_scheduler(void)
    }
 }
 
+void fibonacci(int n) {
+    int a = 0, b = 1, next;
+    static int count = 0; 
+    double startRealTime, endRealTime;
+	
+    startRealTime = getTimeMsec();
+    for (int i = 0; i < n; i++) {
+        next = a + b;
+        a = b;
+        b = next;
+    }
+
+    endRealTime = getTimeMsec();
+    printf("Fibonacci time = %ld Count = %d \n", startRealTime - endRealTime, count++);
+}

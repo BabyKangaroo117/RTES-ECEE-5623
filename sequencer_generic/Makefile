@@ -7,12 +7,12 @@ CFLAGS= -O0 -g $(INCLUDE_DIRS) $(CDEFS)
 LIBS= 
 
 HFILES= 
-CFILES= seqgenex0.c seqgen.c seqgen2.c seqgen3.c seqv4l2.c capturelib.c assignment-5.c
+CFILES= seqgenex0.c seqgen.c seqgen2.c seqgen3.c seqv4l2.c capturelib.c assignment-5.c assignment-1-course-2.c
 
 SRCS= ${HFILES} ${CFILES}
 OBJS= ${CFILES:.c=.o}
 
-all:	seqgenex0 seqgen seqgen2 seqgen3 seqv4l2 clock_times capture assignment-5
+all:	seqgenex0 seqgen seqgen2 seqgen3 seqv4l2 clock_times capture assignment-5 assignment-1-course-2
 
 clean:
 	-rm -f *.o *.d frames/*.pgm frames/*.ppm
@@ -40,6 +40,9 @@ capture: capture.o capturelib.o
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $@.o capturelib.o -lrt
 
 assignment-5: assignment-5.o 
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $@.o -lpthread -lrt
+
+assignment-1-course-2: assignment-1-course-2.o 
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $@.o -lpthread -lrt
 
 depend:
