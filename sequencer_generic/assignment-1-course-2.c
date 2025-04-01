@@ -48,13 +48,9 @@
 //
 // Sequencer - 100 Hz 
 //                   [gives semaphores to all other services]
-// Service_1 - 50 Hz, every other Sequencer loop
-// Service_2 - 20 Hz, every 5th Sequencer loop 
-// Service_3 - 10 Hz ,every 10th Sequencer loop
-// Service_4 -  5 Hz, every 20th Sequencer loop
-// Service_5 -  2 Hz ,every 50th Sequencer loop
-// Service_6 -  1 Hz, every 100th Sequencer loop
-// Service_7 -  1 Hz, every 100th Sequencer loop
+// Service_1 - 50 Hz,    every other Sequencer loop
+// Service_2 - 10 Hz,    every 10th Sequencer loop 
+// Service_3 - 6.667 Hz ,every 15th Sequencer loop
 //
 // With the above, priorities by RM policy would be:
 //
