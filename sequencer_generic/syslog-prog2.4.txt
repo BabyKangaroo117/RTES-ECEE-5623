@@ -1,0 +1,14 @@
+2025-04-02T14:38:26.502443-04:00 raspberrypi assignment-4-course-2: [COURSE:2][ASSIGNMENT:4]: Linux raspberrypi 6.6.74+rpt-rpi-v8 #1 SMP PREEMPT Debian 1:6.6.74-1+rpt1 (2025-01-27) aarch64 GNU/Linux
+2025-04-02T14:38:26.523566-04:00 raspberrypi assignment-4-course-2: [COURSE:2][ASSIGNMENT:4]: Thread 1 start 1 @ sec=152454.262438722 on core 2
+2025-04-02T14:38:26.543523-04:00 raspberrypi assignment-4-course-2: [COURSE:2][ASSIGNMENT:4]: Thread 1 start 2 @ sec=152454.282422148 on core 2
+2025-04-02T14:38:26.558799-04:00 raspberrypi assignment-4-course-2: [COURSE:2][ASSIGNMENT:4]: Thread 2 start 1 @ sec=152454.297778759 on core 2
+2025-04-02T14:38:26.563433-04:00 raspberrypi assignment-4-course-2: [COURSE:2][ASSIGNMENT:4]: Thread 1 start 3 @ sec=152454.302411426 on core 2
+2025-04-02T14:38:26.583412-04:00 raspberrypi assignment-4-course-2: [COURSE:2][ASSIGNMENT:4]: Thread 1 start 4 @ sec=152454.322398056 on core 2
+2025-04-02T14:38:26.595651-04:00 raspberrypi assignment-4-course-2: [COURSE:2][ASSIGNMENT:4]: Thread 3 start 1 @ sec=152454.334672148 on core 2
+2025-04-02T14:38:26.603425-04:00 raspberrypi assignment-4-course-2: [COURSE:2][ASSIGNMENT:4]: Thread 1 start 5 @ sec=152454.342404685 on core 2
+2025-04-02T14:38:26.610227-04:00 raspberrypi assignment-4-course-2: [COURSE:2][ASSIGNMENT:4]: Thread 2 start 2 @ sec=152454.349255704 on core 2
+2025-04-02T14:38:26.623419-04:00 raspberrypi assignment-4-course-2: [COURSE:2][ASSIGNMENT:4]: Thread 1 start 6 @ sec=152454.362398296 on core 2
+2025-04-02T14:38:26.633447-04:00 raspberrypi assignment-4-course-2: [COURSE:2][ASSIGNMENT:4]: Thread 4 start 1 @ sec=152454.372403130 on core 2
+2025-04-02T14:38:26.633637-04:00 raspberrypi assignment-4-course-2: [COURSE:2][ASSIGNMENT:4]: Thread 1 start 7 @ sec=152454.372425426 on core 2
+2025-04-02T14:38:26.640718-04:00 raspberrypi assignment-4-course-2: [COURSE:2][ASSIGNMENT:4]: Thread 2 start 3 @ sec=152454.372430907 on core 2
+2025-04-02T14:38:26.646618-04:00 raspberrypi assignment-4-course-2: [COURSE:2][ASSIGNMENT:4]: Thread 3 start 2 @ sec=152454.372435111 on core 2

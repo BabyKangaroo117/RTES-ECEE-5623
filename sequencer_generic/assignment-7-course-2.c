@@ -48,52 +48,19 @@
 //
 // Sequencer - 100 Hz 
 //                   [gives semaphores to all other services]
-// Service_1 - 50 Hz,    every other Sequencer loop
-// Service_2 - 10 Hz,    every 10th Sequencer loop 
-// Service_3 - 6.667 Hz ,every 15th Sequencer loop
+// Service_1 - 33.33 Hz, every 3rd Sequencer loop
+// Service_2 - 16.67 Hz, every 6th Sequencer loop 
+// Service_3 - 11.11 Hz, every 9th Sequencer loop
 //
 // With the above, priorities by RM policy would be:
 //
-// Sequencer = RT_MAX	@ 100 Hz
-// Servcie_1 = RT_MAX-1	@ 50  Hz
-// Service_2 = RT_MAX-2	@ 10  Hz
-// Service_3 = RT_MAX-3	@ 6.667  Hz
+// Sequencer = RT_MAX	@ 100   Hz
+// Servcie_1 = RT_MAX-1	@ 33.33 Hz
+// Service_2 = RT_MAX-2	@ 16.67 Hz
+// Service_3 = RT_MAX-3	@ 11.11 Hz
 //
-/////////////////////////////////////////////////////////////////////////////
-// JETSON SYSTEM NOTES:
-/////////////////////////////////////////////////////////////////////////////
-//
-// Here are a few hardware/platform configuration settings on your Jetson
-// that you should also check before running this code:
-//
-// 1) Check to ensure all your CPU cores on in an online state - USE "lscpu"
-//
-// 2) Check /sys/devices/system/cpu or do lscpu.
-//
-//    Tegra is normally configured to hot-plug CPU cores, so to make all
-//    available, as root do:
-//
-//    echo 0 > /sys/devices/system/cpu/cpuquiet/tegra_cpuquiet/enable
-//    echo 1 > /sys/devices/system/cpu/cpu1/online
-//    echo 1 > /sys/devices/system/cpu/cpu2/online
-//    echo 1 > /sys/devices/system/cpu/cpu3/online
-//
-// 3) The Jetson NANO requiress a sysctl setting to allow for SCHED_FIFO to be used:
-//
-//    sysctl -w kernel.sched_rt_runtime_us=-1
-//
-//    See - https://forums.developer.nvidia.com/t/pthread-setschedparam-sched-fifo-fails/64394/3
-//
-// 4) Check for precision time resolution and support with cat /proc/timer_list
-//
-// 5) Ideally all printf calls should be eliminated as they can interfere with
-//    timing.  They should be replaced with an in-memory event logger or at
-//    least calls to syslog.
-//
-// 6) For determinism, you should use CPU affinity for AMP scheduling.  Note that without specific affinity,
-//    threads will be SMP by default, annd will be migrated to the least busy core, so be careful.
-
 // This is necessary for CPU affinity macros in Linux
+
 #define _GNU_SOURCE
 
 #include <stdio.h>
@@ -229,7 +196,7 @@ int main(void)
     FILE *fp = popen("uname -a", "r");
     if (fp == NULL)
     {
-       syslog(LOG_ERR, "[COURSE:2][ASSIGNMENT:1]: Failed to run uname command");
+       syslog(LOG_ERR, "[COURSE:2][ASSIGNMENT:7]: Failed to run uname command");
        return 1;
     }
 
@@ -237,7 +204,7 @@ int main(void)
     // Read command output from internal buffer into input buffer
     if(fgets(buffer, sizeof(buffer), fp) != NULL)
     {
-       syslog(LOG_CRIT, "[COURSE:2][ASSIGNMENT:1]: %s", buffer);
+       syslog(LOG_CRIT, "[COURSE:2][ASSIGNMENT:7]: %s", buffer);
     }
     
     // Close the pipe
@@ -313,7 +280,7 @@ int main(void)
     // Create Service threads which will block awaiting release for:
     //
 
-    // Servcie_1 = RT_MAX-1	@ 50 Hz
+    // Servcie_1 = RT_MAX-1	@ 33.33 Hz
     //
     rt_param[0].sched_priority=rt_max_prio-1;
     pthread_attr_setschedparam(&rt_sched_attr[0], &rt_param[0]);
@@ -329,7 +296,7 @@ int main(void)
         printf("pthread_create successful for service 1\n");
 
 
-    // Service_2 = RT_MAX-2	@ 10 Hz
+    // Service_2 = RT_MAX-2	@ 16.67 Hz
     //
     rt_param[1].sched_priority=rt_max_prio-2;
     pthread_attr_setschedparam(&rt_sched_attr[1], &rt_param[1]);
@@ -340,7 +307,7 @@ int main(void)
         printf("pthread_create successful for service 2\n");
 
 
-    // Service_3 = RT_MAX-3	@ 6.667 Hz
+    // Service_3 = RT_MAX-3	@ 11.11 Hz
     //
     rt_param[2].sched_priority=rt_max_prio-3;
     pthread_attr_setschedparam(&rt_sched_attr[2], &rt_param[2]);
@@ -360,7 +327,7 @@ int main(void)
  
     // Create Sequencer thread, which like a cyclic executive, is highest prio
     printf("Start sequencer\n");
-    sequencePeriods=30;
+    sequencePeriods=18;
 
     // Sequencer = RT_MAX	@ 100 Hz
     //
@@ -408,7 +375,6 @@ void Sequencer(int id)
 
     // received interval timer signal
            
-    seqCnt++;
 
     //clock_gettime(MY_CLOCK_TYPE, &current_time_val); current_realtime=realtime(&current_time_val);
     //printf("Sequencer on core %d for cycle %llu @ sec=%6.9lf\n", sched_getcpu(), seqCnt, current_realtime-start_realtime);
@@ -417,14 +383,16 @@ void Sequencer(int id)
 
     // Release each service at a sub-rate of the generic sequencer rate
 
-    // Servcie_1 = RT_MAX-1	@ 50 Hz
-    if((seqCnt % 2) == 0) sem_post(&semS1);
+    // Servcie_1 = RT_MAX-1	@ 33.33 Hz
+    if((seqCnt % 3) == 0) sem_post(&semS1);
 
-    // Service_2 = RT_MAX-2	@ 10 Hz
-    if((seqCnt % 10) == 0) sem_post(&semS2);
+    // Service_2 = RT_MAX-2	@ 16.67 Hz
+    if((seqCnt % 6) == 0) sem_post(&semS2);
 
-    // Service_3 = RT_MAX-3	@ 6.667 Hz
-    if((seqCnt % 15) == 0) sem_post(&semS3);
+    // Service_3 = RT_MAX-3	@ 11.11 Hz
+    if((seqCnt % 9) == 0) sem_post(&semS3);
+
+    seqCnt++;
 
     if(abortTest || (seqCnt >= sequencePeriods))
     {
@@ -465,7 +433,7 @@ void *Service_1(void *threadp)
         sem_wait(&semS1);
 
         clock_gettime(MY_CLOCK_TYPE, &current_time_val); current_realtime=realtime(&current_time_val);
-        syslog(LOG_CRIT, "[COURSE:2][ASSIGNMENT:1]: Thread 1 start %llu @ sec=%6.9lf on core %d\n", S1Cnt, current_realtime-start_realtime, sched_getcpu());
+        syslog(LOG_CRIT, "[COURSE:2][ASSIGNMENT:7]: Thread 1 start %llu @ sec=%6.9lf on core %d\n", S1Cnt, current_realtime-start_realtime, sched_getcpu());
 
 	fibonacci(40000);
 	
@@ -499,9 +467,9 @@ void *Service_2(void *threadp)
         sem_wait(&semS2);
 
         clock_gettime(MY_CLOCK_TYPE, &current_time_val); current_realtime=realtime(&current_time_val);
-        syslog(LOG_CRIT, "[COURSE:2][ASSIGNMENT:1]: Thread 2 start %llu @ sec=%6.9lf on core %d\n", S2Cnt, current_realtime-start_realtime, sched_getcpu());
+        syslog(LOG_CRIT, "[COURSE:2][ASSIGNMENT:7]: Thread 2 start %llu @ sec=%6.9lf on core %d\n", S2Cnt, current_realtime-start_realtime, sched_getcpu());
 
-	fibonacci(40000);
+	fibonacci(80000);
 	
 	S2Cnt++;
 
@@ -531,9 +499,9 @@ void *Service_3(void *threadp)
         sem_wait(&semS3);
 
         clock_gettime(MY_CLOCK_TYPE, &current_time_val); current_realtime=realtime(&current_time_val);
-        syslog(LOG_CRIT, "[COURSE:2][ASSIGNMENT:1]: Thread 3 start %llu @ sec=%6.9lf on core %d\n", S3Cnt, current_realtime-start_realtime, sched_getcpu());
+        syslog(LOG_CRIT, "[COURSE:2][ASSIGNMENT:7]: Thread 3 start %llu @ sec=%6.9lf on core %d\n", S3Cnt, current_realtime-start_realtime, sched_getcpu());
 
-	fibonacci(80000);
+	fibonacci(120000);
 	
 	S3Cnt++;
 

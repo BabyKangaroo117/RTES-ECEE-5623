@@ -1,0 +1,22 @@
+2025-04-02T10:54:23.810387-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Linux raspberrypi 6.6.74+rpt-rpi-v8 #1 SMP PREEMPT Debian 1:6.6.74-1+rpt1 (2025-01-27) aarch64 GNU/Linux
+2025-04-02T10:54:29.141370-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Linux raspberrypi 6.6.74+rpt-rpi-v8 #1 SMP PREEMPT Debian 1:6.6.74-1+rpt1 (2025-01-27) aarch64 GNU/Linux
+2025-04-02T10:54:29.163551-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Thread 1 start 0 @ sec=139016.570049195 on core 2
+2025-04-02T10:54:29.183455-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Thread 1 start 1 @ sec=139016.590001343 on core 2
+2025-04-02T10:54:29.203456-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Thread 1 start 2 @ sec=139016.610016713 on core 2
+2025-04-02T10:54:29.223005-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Thread 1 start 3 @ sec=139016.629982787 on core 2
+2025-04-02T10:54:29.243726-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Thread 1 start 4 @ sec=139016.649986454 on core 2
+2025-04-02T10:54:29.243995-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Thread 2 start 0 @ sec=139016.650753213 on core 2
+2025-04-02T10:54:29.262992-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Thread 1 start 5 @ sec=139016.669983510 on core 2
+2025-04-02T10:54:29.283011-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Thread 1 start 6 @ sec=139016.689988417 on core 2
+2025-04-02T10:54:29.293728-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Thread 3 start 0 @ sec=139016.699998250 on core 2
+2025-04-02T10:54:29.303025-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Thread 1 start 7 @ sec=139016.710004398 on core 2
+2025-04-02T10:54:29.323237-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Thread 1 start 8 @ sec=139016.729994509 on core 2
+2025-04-02T10:54:29.344176-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Thread 1 start 9 @ sec=139016.750000398 on core 2
+2025-04-02T10:54:29.344517-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Thread 2 start 1 @ sec=139016.750979491 on core 2
+2025-04-02T10:54:29.363243-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Thread 1 start 10 @ sec=139016.769999972 on core 2
+2025-04-02T10:54:29.383374-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Thread 1 start 11 @ sec=139016.789998509 on core 2
+2025-04-02T10:54:29.403377-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Thread 1 start 12 @ sec=139016.810007139 on core 2
+2025-04-02T10:54:29.423238-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Thread 1 start 13 @ sec=139016.829999509 on core 2
+2025-04-02T10:54:29.444180-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Thread 1 start 14 @ sec=139016.850001046 on core 2
+2025-04-02T10:54:29.444529-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Thread 2 start 2 @ sec=139016.851872769 on core 2
+2025-04-02T10:54:29.445188-04:00 raspberrypi assignment-1-course-2: [COURSE:2][ASSIGNMENT:1]: Thread 3 start 1 @ sec=139016.852910083 on core 2
