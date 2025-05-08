@@ -13,7 +13,7 @@ OBJECTS =	serialutil.o \
 
 CC = gcc
 
-INCLUDES = -I.
+INCLUDES = -I .
 
 LDFLAGS =
 

@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <strings.h>
 #include <string.h>
-
+#include <unistd.h>
 #define NSTRS 3
 #define DEFAULT_PORT 54321
 
