@@ -137,39 +137,38 @@ static int xioctl(int fh, int request, void *arg)
         return r;
 }
 
+
 char ppm_header[]="P6\n#9999999999 sec 9999999999 msec \n"HRES_STR" "VRES_STR"\n255\n";
 char ppm_dumpname[]="test00000000.ppm";
 
 static void dump_ppm(const void *p, int size, unsigned int tag, struct timespec *time)
 {
-    int written, i, total, dumpfd;
-   
-    snprintf(&ppm_dumpname[4], 9, "%08d", tag);
-    strncat(&ppm_dumpname[12], ".ppm", 5);
-    dumpfd = open(ppm_dumpname, O_WRONLY | O_NONBLOCK | O_CREAT, 00666);
+   int written, i, total, dumpfd;
+  
+   snprintf(&ppm_dumpname[4], 9, "%08d", tag);
+   strncat(&ppm_dumpname[12], ".ppm", 5);
+   dumpfd = open(ppm_dumpname, O_WRONLY | O_NONBLOCK | O_CREAT, 00666);
 
-    snprintf(&ppm_header[4], 11, "%010d", (int)time->tv_sec);
-    strncat(&ppm_header[14], " sec ", 5);
-    snprintf(&ppm_header[19], 11, "%010d", (int)((time->tv_nsec)/1000000));
-    strncat(&ppm_header[29], " msec \n"HRES_STR" "VRES_STR"\n255\n", 19);
+   snprintf(&ppm_header[4], 11, "%010d", (int)time->tv_sec);
+   strncat(&ppm_header[14], " sec ", 5);
+   snprintf(&ppm_header[19], 11, "%010d", (int)((time->tv_nsec)/1000000));
+   strncat(&ppm_header[29], " msec \n"HRES_STR" "VRES_STR"\n255\n", 19);
 
-    // subtract 1 because sizeof for string includes null terminator
-    written=write(dumpfd, ppm_header, sizeof(ppm_header)-1);
+   // subtract 1 because sizeof for string includes null terminator
+   written=write(dumpfd, ppm_header, sizeof(ppm_header)-1);
 
-    total=0;
+   total=0;
 
-    do
-    {
-        written=write(dumpfd, p, size);
-        total+=written;
-    } while(total < size);
+   do
+   {
+       written=write(dumpfd, p, size);
+       total+=written;
+   } while(total < size);
 
-    printf("wrote %d bytes\n", total);
+   printf("wrote %d bytes\n", total);
 
-    close(dumpfd);
-    
+   close(dumpfd);
 }
-
 
 char pgm_header[]="P5\n#9999999999 sec 9999999999 msec \n"HRES_STR" "VRES_STR"\n255\n";
 char pgm_dumpname[]="test00000000.pgm";
@@ -459,8 +458,8 @@ void *ReadImageService(void *threadp)
     struct timespec read_delay;
     struct timespec time_error;
 
-    read_delay.tv_sec=0.33;
-    read_delay.tv_nsec=0;
+    read_delay.tv_sec=0;
+    read_delay.tv_nsec=33333333;
 
     count = frame_count;
 
@@ -633,7 +632,7 @@ static void init_mmap(void)
 
         CLEAR(req);
 
-        req.count = 30;
+        req.count = 6;
         req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         req.memory = V4L2_MEMORY_MMAP;
 
@@ -975,7 +974,7 @@ int main(int argc, char **argv)
  
     struct mq_attr attr;
     attr.mq_flags = 0;
-    attr.mq_maxmsg = 180;
+    attr.mq_maxmsg = 30;
     attr.mq_msgsize = sizeof(FrameInfo);
     attr.mq_curmsgs = 0;
     printf("Initial %d \n", sizeof(FrameInfo));
